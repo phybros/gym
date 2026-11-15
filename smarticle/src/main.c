@@ -6,8 +6,8 @@
 #include <math.h>
 #include <string.h>
 
-const int screenWidth = 1280;
-const int screenHeight = 1280;
+const int screenWidth = 800;
+const int screenHeight = 800;
 
 // how many total particles
 #define NUM_PARTICLES 1200
@@ -48,7 +48,6 @@ void initialize_forces_matrix() {
     for (int i = 0; i < NUM_SPECIES; i++) {
         for (int j = 0; j < NUM_SPECIES; j++) {
             attractions[i][j] = randf_range(-1, 1);
-            printf("%f\n", attractions[i][j]);
         }
     }
 }
@@ -121,6 +120,9 @@ int main(int argc, char ** argv)
 
     // seed the rng
     srand(time(NULL));
+
+    // chill the logs out a bit
+    SetTraceLogLevel(LOG_WARNING);
 
     // if we passed in a seed, use that for srand instead
     if (argc > 1) {
