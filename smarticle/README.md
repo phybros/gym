@@ -13,4 +13,14 @@ ideas
 1. add some sort of UI to tweak the settings
 1. make it look pretty
 
+## build / run
+
+```
+# generate the build files
+cmake -B build .
+# and then
+cmake --build build
+# and then
+./build/smarticle
+```
 

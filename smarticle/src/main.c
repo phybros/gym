@@ -10,12 +10,13 @@ const int screenWidth = 1280;
 const int screenHeight = 1280;
 
 // how many total particles
-#define NUM_PARTICLES 1000
+#define NUM_PARTICLES 1200
 // how many different species
-#define NUM_SPECIES 4
+#define NUM_SPECIES 6
 
 float max_range = 0.1;
-float timestep = 0.002;
+float timestep = 0.02;
+float force_scale_factor = 8.0;
 
 Color species_colors[NUM_SPECIES];
 
@@ -54,9 +55,9 @@ void initialize_forces_matrix() {
 
 
 float force(float r, float attraction) {
-    float beta = 0.3;
+    float beta = 0.2;
 
-    if (r < 0.3) {
+    if (r < beta) {
         return r / beta - 1;
     } else if (beta < r && r < 1) {
         return attraction * (1 - fabs(2 * r - 1 - beta) / (1 - beta));
@@ -66,7 +67,13 @@ float force(float r, float attraction) {
 }
 
 void update_simulation_naive(float delta) {
-    // update particle positions
+    float friction = pow(0.5, timestep / 0.04);
+
+    // update acceleration based on attraction forces
+    // update velocity based on acceleration
+    // reduce movement by friction else particles will fly away forever
+    // update particle positions based on velocities
+
     for (int i = 0; i < NUM_PARTICLES; i++) {
         // always start from 0
         Vector2 acceleration = {0};
@@ -74,45 +81,29 @@ void update_simulation_naive(float delta) {
         for (int j = 0; j < NUM_PARTICLES; j++) {
             if (i == j) continue;
 
-            // update acceleration based on attraction forces
-            
-            // update velocity based on acceleration
-
-            Vector2 dirToOther = Vector2Subtract(p.positions[j], p.positions[i]);
+            Vector2 dirToOther = Vector2Normalize(Vector2Subtract(p.positions[j], p.positions[i]));
             float r = Vector2Distance(p.positions[i], p.positions[j]);
-
-
 
             float attraction = attractions[p.colors[i]][p.colors[j]];
 
             if (r > 0 && r <= max_range) {
                 float f = force(r / max_range, attraction);
-                acceleration.x += dirToOther.x / r * f;
-                acceleration.y += dirToOther.y / r * f;
-
+                acceleration.x += dirToOther.x * f;
+                acceleration.y += dirToOther.y * f;
             }
-
         }
 
-        acceleration = Vector2Scale(acceleration, max_range);
-        float friction = pow(0.5, delta / 0.01);
+        acceleration = Vector2Scale(acceleration, max_range * force_scale_factor);
 
         p.velocities[i] = Vector2Scale(p.velocities[i], friction);
+        p.velocities[i] = Vector2Add(p.velocities[i], Vector2Scale(acceleration, timestep));
+    }
 
-        p.velocities[i] = Vector2Add(p.velocities[i], acceleration);
 
+    for (int i = 0; i < NUM_PARTICLES; i++) {
         // update positions based on velocity
-        p.positions[i].x += p.velocities[i].x * delta;
-        p.positions[i].y += p.velocities[i].y * delta;
-
-        // if (p.positions[i].x > screenWidth)
-        //     p.positions[i].x = screenWidth;
-        // if (p.positions[i].y > screenHeight)
-        //     p.positions[i].y = screenHeight;
-        // if (p.positions[i].x < 0)
-        //     p.positions[i].x = 0;
-        // if (p.positions[i].y < 0)
-        //     p.positions[i].y = 0;
+        p.positions[i].x += p.velocities[i].x * timestep;
+        p.positions[i].y += p.velocities[i].y * timestep;
     }
 }
 
@@ -135,7 +126,7 @@ int main(int argc, char ** argv)
     if (argc > 1) {
         unsigned int seed = 0;
         for (size_t c = 0; c < strlen(argv[1]); c++) {
-            printf("%c\n", argv[1][c]);
+            // just add all the characters in the first arg togehther :D 
             seed += (int)argv[1][c];
         }
 
@@ -173,12 +164,18 @@ int main(int argc, char ** argv)
     // main looop
     while (!WindowShouldClose())
     {
+        // press enter to change all the behaviours at once
+        if (IsKeyPressed(KEY_ENTER)) {
+            initialize_forces_matrix();
+        }
+
         update_simulation_naive(GetFrameTime());
 
         // redner the particles!
         BeginDrawing();
             ClearBackground(BLACK);
             render();
+            DrawFPS(2, 2);
         EndDrawing();
     }
 
