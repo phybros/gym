@@ -4,6 +4,8 @@ a place for me to code for fun.
 
 mostly thinking about C at the moment, but it's not a restriction.
 
+this code is not supposed to be pretty, or super optimized or anything.
+
 ideas:
 
 - playing with command line arguments in C (`strtok` and friends??)
