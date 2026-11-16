@@ -8,7 +8,11 @@ try write my own version of `hexdump`, but more like `xxd`.
 
 it works!
 
-found the source of the `xxd` that I have: <https://github.com/vim/vim/blob/master/src/xxd/xxd.c> for reference.
+## links/ref:
+
+- found the source of the `xxd` that I have: <https://github.com/vim/vim/blob/master/src/xxd/xxd.c> for reference.
+- color control codes: <https://gist.github.com/JBlond/2fea43a3049b38287e5e9cefc87b2124>
+- good ol ascii table: <https://condor.depaul.edu/sjost/lsp121/documents/ascii-npr.htm>
 
 ## build and run
 
