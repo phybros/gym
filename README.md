@@ -7,7 +7,7 @@ mostly thinking about C at the moment, but it's not a restriction.
 ideas:
 
 - playing with command line arguments in C (`strtok` and friends??)
-- hexdump
+- [`hexdump` clone](dumphex/)
 - my own shell
 - fun with strings in c
 - [particle life (smarticle)](smarticle/)
