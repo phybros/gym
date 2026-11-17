@@ -13,7 +13,7 @@ ideas:
 - my own shell
 - fun with strings in c
 - [particle life (smarticle)](smarticle/)
-- `wc` clone
+- [`wc` clone](hm/)
 - `grep` clone?
 - custom memory allocator (and arenas??)
 - play around with SIMD
