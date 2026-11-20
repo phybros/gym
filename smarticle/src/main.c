@@ -11,7 +11,7 @@ const int screenWidth = 800;
 const int screenHeight = 800;
 
 // how many total particles
-#define NUM_PARTICLES 5000
+#define NUM_PARTICLES 10000
 // how many different species
 #define NUM_SPECIES 8
 
@@ -303,6 +303,8 @@ int main(int argc, char ** argv)
 
     char t_sim_label[32];
     char t_render_label[32];
+    char particle_label[32];
+    char seed_label[32];
 
     // main looop
     while (!WindowShouldClose())
@@ -322,6 +324,7 @@ int main(int argc, char ** argv)
 
         // redner the particles!
         BeginDrawing();
+
             t = GetTime();
             ClearBackground(BLACK);
             render();
@@ -334,6 +337,12 @@ int main(int argc, char ** argv)
                 DrawText(t_sim_label, 2, 20, 20, GREEN);
                 DrawText(t_render_label, 2, 40, 20, GREEN);
             }
+
+            sprintf(particle_label, "n: %d", NUM_PARTICLES);
+            DrawText(particle_label, screenWidth - MeasureText(particle_label, 16) - 4, screenHeight - 20, 16, (Color){255, 255, 255, 128});
+            sprintf(seed_label, "s: %d", seed);
+            DrawText(seed_label, 4, screenHeight - 20, 16, (Color){255, 255, 255, 128});
+
         EndDrawing();
 
     }
