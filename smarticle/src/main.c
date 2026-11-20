@@ -61,7 +61,7 @@ void initialize_forces_matrix() {
 void draw_grid() {
     if (!DEBUG) return;
 
-    char label[6];
+    char label[32];
 
     float grid_factor = screenWidth / (float)GRID_SIZE;
 
@@ -71,8 +71,12 @@ void draw_grid() {
         for (int y = 0; y < GRID_SIZE; y++) {
             if (y > 0) DrawLine(0, y * grid_factor, screenWidth, y * grid_factor, GRAY);
 
-            sprintf(label, "%d,%d", x, y);        
+            int pcount = particles_per_cell[x][y];
+
+            sprintf(label, "%d, %d\n%d", x, y, pcount);        
             DrawText(label, x * grid_factor, y * grid_factor, 10, WHITE);
+
+            
         }
     }
 }
@@ -333,13 +337,15 @@ int main(int argc, char ** argv)
             t = GetTime();
             ClearBackground(BLACK);
             render();
-            DrawFPS(2, 2);
+            if (DEBUG) DrawFPS(2, 2);
             t_render = GetTime() - t;
 
-            sprintf(t_sim_label, "sim: %f", t_sim * 1000.0f);
-            sprintf(t_render_label, "ren: %f", t_render * 1000.0f);
-            DrawText(t_sim_label, 2, 20, 20, GREEN);
-            DrawText(t_render_label, 2, 40, 20, GREEN);
+            if (DEBUG) {
+                sprintf(t_sim_label, "sim: %f", t_sim * 1000.0f);
+                sprintf(t_render_label, "ren: %f", t_render * 1000.0f);
+                DrawText(t_sim_label, 2, 20, 20, GREEN);
+                DrawText(t_render_label, 2, 40, 20, GREEN);
+            }
         EndDrawing();
 
     }
