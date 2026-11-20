@@ -246,8 +246,6 @@ void render() {
 
 int main(int argc, char ** argv)
 {
-    const int PARTICLES_PER_SPECIES = (int)floorf(NUM_PARTICLES / NUM_SPECIES);
-
     // seed the rng
     unsigned int seed = time(NULL);
 
@@ -287,23 +285,13 @@ int main(int argc, char ** argv)
     InitWindow(screenWidth, screenHeight, "smarticle");
 
     // initialize all the particles
-    float offset = 1.0f/(float)NUM_SPECIES;
     for (int i = 0; i < NUM_PARTICLES; i++) {
-        // random positions
-        // p.positions[i] = (Vector2){
-        //     .x = randf_range(offset - 1.0f/(float)NUM_SPECIES, offset),
-        //     .y = randf_range(offset - 1.0f/(float)NUM_SPECIES, offset),
-        // };
         p.positions[i] = (Vector2) {
             .x = randf_range(0, 1),
             .y = randf_range(0, 1),
         };
 
         p.colors[i] = i % NUM_SPECIES;
-
-        if (i % PARTICLES_PER_SPECIES == 0 && i > 0) {
-            offset += 1.0f/(float)NUM_SPECIES;
-        }
     }
 
     initialize_forces_matrix();
