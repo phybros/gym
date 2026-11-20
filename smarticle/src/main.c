@@ -10,15 +10,15 @@ const int screenWidth = 800;
 const int screenHeight = 800;
 
 // how many total particles
-#define NUM_PARTICLES 1200
+#define NUM_PARTICLES 15000
 // how many different species
-#define NUM_SPECIES 6
+#define NUM_SPECIES 8
 
-#define GRID_SIZE 10
+#define GRID_SIZE 20
 
 int DEBUG = 0;
-float max_range = 0.1;
-float timestep = 0.02;
+float max_range = 0.05;
+float timestep = 0.005;
 float force_scale_factor = 8.0;
 
 Color species_colors[NUM_SPECIES];
@@ -28,8 +28,6 @@ typedef struct {
     Vector2 positions[NUM_PARTICLES];
     Vector2 velocities[NUM_PARTICLES];
     int colors[NUM_PARTICLES];
-    int grid_cell_x[NUM_PARTICLES];
-    int grid_cell_y[NUM_PARTICLES];
 } Particles;
 
 Particles p;
@@ -39,8 +37,8 @@ typedef struct {
 } forces;
 
 float attractions[NUM_SPECIES][NUM_SPECIES];
-int nearby_particles[NUM_PARTICLES]; // pretty sure i can just reuse/overwrite this for each particle
 int grid[GRID_SIZE][GRID_SIZE][NUM_PARTICLES];
+int particles_per_cell[GRID_SIZE][GRID_SIZE];
 
 float randf_range(float min, float max) {
     float scale = rand() / (float) RAND_MAX;
@@ -77,15 +75,30 @@ void draw_grid() {
         }
     }
 }
+
+int get_cell_index(float position) {
+    int result = (int)floorf(position / max_range);
+    if (result >= GRID_SIZE) result = 0;
+    if (result < 0) result = GRID_SIZE - 1;
+    return result;
+}
+
 void update_grid_cells() {
-    float grid_factor = screenWidth / (float)GRID_SIZE;
+    // grid cells are max_range units wide and high
+    
+    // zero out the grid cell index
+    for (int b = 0; b < GRID_SIZE; b++) {
+        for (int c = 0; c < GRID_SIZE; c++) {
+            particles_per_cell[b][c] = 0;
+        }
+    }
 
     for (int i = 0; i < NUM_PARTICLES; i++) {
-        int scaledx = (int)(p.positions[i].x * screenWidth) / grid_factor;
-        int scaledy = (int)(p.positions[i].y * screenHeight) / grid_factor;
+        int x = get_cell_index(p.positions[i].x);
+        int y = get_cell_index(p.positions[i].y);
 
-        p.grid_cell_x[i] = scaledx;
-        p.grid_cell_y[i] = scaledy;
+        grid[x][y][particles_per_cell[x][y]] = i;
+        particles_per_cell[x][y]++;
     }
 }
 
@@ -95,21 +108,21 @@ float force(float r, float attraction) {
     if (r < beta) {
         return r / beta - 1;
     } else if (beta < r && r < 1) {
-        return attraction * (1 - fabs(2 * r - 1 - beta) / (1 - beta));
+        return attraction * (1 - fabsf(2 * r - 1 - beta) / (1 - beta));
     } else {
         return 0.0;
     }
 }
 
-int get_nearby_particles(int particle) {
+int get_nearby_particles(int cell_x, int cell_y, int *nearby_particles) {
     int num_nearby_particles = 0;
 
     // naive solution: just return all particles
     {
-        for (int i = 0; i < NUM_PARTICLES; i++) {
-            nearby_particles[num_nearby_particles] = i;
-            num_nearby_particles++;
-        }
+        // for (int i = 0; i < NUM_PARTICLES; i++) {
+        //     nearby_particles[num_nearby_particles] = i;
+        //     num_nearby_particles++;
+        // }
     }
 
     // spatial grid?
@@ -118,24 +131,40 @@ int get_nearby_particles(int particle) {
         // return all the particle ids for the 8 cells around it
         //
         // i need an array of all the cells which gets refreshed every timestep
-        // for (int i = 0; i < NUM_PARTICLES; i++) {
-        //
-        //     for (int x = -1; x <= 1; x++) {
-        //         for (int y = -1; y <= 1; y++) {
-        //             if (p.grid_cell_x[i] == p.grid_cell_x[particle+x] && p.grid_cell_y[i] == p.grid_cell_y[particle+y]) {
-        //                 nearby_particles[num_nearby_particles] = i;
-        //                 num_nearby_particles++;
-        //             }
-        //         }
-        //     }
-        // }
+        int max_cell = GRID_SIZE - 1; // TODO: calculate this instead of hardcoding 9
+
+        for (int x = -1; x <= 1; x++) {
+            for (int y = -1; y <= 1; y++) {
+                int check_cell_x = cell_x + x;
+                int check_cell_y = cell_y + y;
+
+                // because we only check 1 cell in every direction, we can hardcode max_cell and 0
+                if (check_cell_x < 0) {
+                    check_cell_x = max_cell;
+                }
+                if (check_cell_y < 0) {
+                    check_cell_y = max_cell;
+                }
+                if (check_cell_x > max_cell) {
+                    check_cell_x = 0;
+                }
+                if (check_cell_y > max_cell) {
+                    check_cell_y = 0;
+                }
+
+                for (int pp = 0; pp < particles_per_cell[check_cell_x][check_cell_y]; pp++) {
+                    nearby_particles[num_nearby_particles] = grid[check_cell_x][check_cell_y][pp];
+                    num_nearby_particles++;
+                }
+            }
+        }
     }
 
     return num_nearby_particles;
 }
 
 void update_simulation(float delta) {
-    float friction = pow(0.5, delta / 0.04);
+    float friction = powf(0.5f, delta / 0.04f);
 
     // update acceleration based on attraction forces
     // update velocity based on acceleration
@@ -143,25 +172,42 @@ void update_simulation(float delta) {
     // update particle positions based on velocities
 
     for (int i = 0; i < NUM_PARTICLES; i++) {
+        int nearby_particles[NUM_PARTICLES];
+
         // always start from 0
         Vector2 acceleration = {0};
-        int n = get_nearby_particles(i);
+
+        int my_cell_x = get_cell_index(p.positions[i].x);
+        int my_cell_y = get_cell_index(p.positions[i].y);
+
+        int n = get_nearby_particles(my_cell_x, my_cell_y, nearby_particles);
 
         for (int j = 0; j < n; j++) {
             int o = nearby_particles[j];
 
             if (i == o) continue;
 
-            Vector2 dirToOther = Vector2Normalize(Vector2Subtract(p.positions[o], p.positions[i]));
-            float r = Vector2Distance(p.positions[i], p.positions[o]);
+            Vector2 d = Vector2Subtract(p.positions[o], p.positions[i]);
+            if (d.x >  0.5f) d.x -= 1.0f; else if (d.x < -0.5f) d.x += 1.0f;
+            if (d.y >  0.5f) d.y -= 1.0f; else if (d.y < -0.5f) d.y += 1.0f;
+
+            // skip particles that are out of range with a "cheaper" check
+            float lsqr = Vector2LengthSqr(d);
+            if (lsqr > max_range * max_range) continue;
+
+            float r = sqrtf(lsqr);
+
+            if (r <= 0) continue;
+
+            Vector2 dirToOther = (Vector2) {
+                .x = d.x / r,
+                .y = d.y / r,
+            };
 
             float attraction = attractions[p.colors[i]][p.colors[o]];
-
-            if (r > 0 && r <= max_range) {
-                float f = force(r / max_range, attraction);
-                acceleration.x += dirToOther.x * f;
-                acceleration.y += dirToOther.y * f;
-            }
+            float f = force(r / max_range, attraction);
+            acceleration.x += dirToOther.x * f;
+            acceleration.y += dirToOther.y * f;
         }
 
         acceleration = Vector2Scale(acceleration, max_range * force_scale_factor);
@@ -175,6 +221,9 @@ void update_simulation(float delta) {
         // update positions based on velocity
         p.positions[i].x += p.velocities[i].x * delta;
         p.positions[i].y += p.velocities[i].y * delta;
+
+        p.positions[i].x -= floorf(p.positions[i].x);
+        p.positions[i].y -= floorf(p.positions[i].y);
     }
 
     update_grid_cells();
@@ -182,7 +231,8 @@ void update_simulation(float delta) {
 
 void render() {
     for (int i = 0; i < NUM_PARTICLES; i++) {
-       DrawCircle(p.positions[i].x * screenWidth, p.positions[i].y * screenHeight, 2, species_colors[p.colors[i]]);
+       // DrawCircle(p.positions[i].x * screenWidth, p.positions[i].y * screenHeight, 2, species_colors[p.colors[i]]);
+       DrawPixel(p.positions[i].x * screenWidth, p.positions[i].y * screenHeight, species_colors[p.colors[i]]);
     }
 
     draw_grid();
@@ -190,7 +240,7 @@ void render() {
 
 int main(int argc, char ** argv)
 {
-    const int PARTICLES_PER_SPECIES = (int)floor(NUM_PARTICLES / NUM_SPECIES);
+    const int PARTICLES_PER_SPECIES = (int)floorf(NUM_PARTICLES / NUM_SPECIES);
 
     // seed the rng
     unsigned int seed = time(NULL);
@@ -229,22 +279,36 @@ int main(int argc, char ** argv)
 
     // startup raylib
     InitWindow(screenWidth, screenHeight, "smarticle");
-    SetTargetFPS(60);
 
     // initialize all the particles
+    float offset = 1.0f/(float)NUM_SPECIES;
     for (int i = 0; i < NUM_PARTICLES; i++) {
         // random positions
-        p.positions[i] = (Vector2){
+        // p.positions[i] = (Vector2){
+        //     .x = randf_range(offset - 1.0f/(float)NUM_SPECIES, offset),
+        //     .y = randf_range(offset - 1.0f/(float)NUM_SPECIES, offset),
+        // };
+        p.positions[i] = (Vector2) {
             .x = randf_range(0, 1),
             .y = randf_range(0, 1),
         };
 
-        p.colors[i] = (int)floor(i / PARTICLES_PER_SPECIES);
+        p.colors[i] = i % NUM_SPECIES;
+
+        if (i % PARTICLES_PER_SPECIES == 0 && i > 0) {
+            offset += 1.0f/(float)NUM_SPECIES;
+        }
     }
 
     initialize_forces_matrix();
 
     update_grid_cells();
+    double t = GetTime();
+    double t_sim = t;
+    double t_render = t;
+
+    char t_sim_label[32];
+    char t_render_label[32];
 
     // main looop
     while (!WindowShouldClose())
@@ -258,14 +322,24 @@ int main(int argc, char ** argv)
             DEBUG = !DEBUG;
         }
 
+        t = GetTime();
         update_simulation(timestep);
+        t_sim = GetTime() - t;
 
         // redner the particles!
         BeginDrawing();
+            t = GetTime();
             ClearBackground(BLACK);
             render();
             DrawFPS(2, 2);
+            t_render = GetTime() - t;
+
+            sprintf(t_sim_label, "sim: %f", t_sim * 1000.0f);
+            sprintf(t_render_label, "ren: %f", t_render * 1000.0f);
+            DrawText(t_sim_label, 2, 20, 20, GREEN);
+            DrawText(t_render_label, 2, 40, 20, GREEN);
         EndDrawing();
+
     }
 
     CloseWindow();
