@@ -5,12 +5,13 @@
 #include <time.h>
 #include <math.h>
 #include <string.h>
+#include <omp.h>
 
 const int screenWidth = 800;
 const int screenHeight = 800;
 
 // how many total particles
-#define NUM_PARTICLES 15000
+#define NUM_PARTICLES 5000
 // how many different species
 #define NUM_SPECIES 8
 
@@ -18,7 +19,7 @@ const int screenHeight = 800;
 
 int DEBUG = 0;
 float max_range = 0.05;
-float timestep = 0.005;
+float timestep = 0.004;
 float force_scale_factor = 8.0;
 
 Color species_colors[NUM_SPECIES];
@@ -103,7 +104,7 @@ void update_grid_cells() {
 }
 
 float force(float r, float attraction) {
-    float beta = 0.2;
+    float beta = 0.3;
 
     if (r < beta) {
         return r / beta - 1;
@@ -171,6 +172,7 @@ void update_simulation(float delta) {
     // reduce movement by friction else particles will fly away forever
     // update particle positions based on velocities
 
+    #pragma omp parallel for schedule(dynamic, 64)
     for (int i = 0; i < NUM_PARTICLES; i++) {
         int nearby_particles[NUM_PARTICLES];
 

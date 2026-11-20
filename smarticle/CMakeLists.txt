@@ -25,9 +25,25 @@ if(NOT raylib_FOUND)
     FetchContent_MakeAvailable(raylib)
 endif()
 
+# macOS: Apple Clang has no OpenMP runtime. Point CMake at Homebrew's libomp.
+if(APPLE AND NOT DEFINED OpenMP_ROOT)
+  execute_process(
+    COMMAND brew --prefix libomp
+    OUTPUT_VARIABLE _libomp_prefix
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+  )
+  if(_libomp_prefix)
+    set(OpenMP_ROOT "${_libomp_prefix}")
+  endif()
+endif()
+
+find_package(OpenMP REQUIRED)
+
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS src/*.c)
 add_executable(${PROJECT_NAME} ${SOURCES})
 target_link_libraries(${PROJECT_NAME} PRIVATE raylib m)
+target_link_libraries(${PROJECT_NAME} PRIVATE OpenMP::OpenMP_C)
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra)
 
 # Copy assets next to the binary if an assets/ dir exists
