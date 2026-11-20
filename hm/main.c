@@ -18,10 +18,9 @@ int main(int argc, char **argv) {
 
     // jsut count the newlines
     int newlines = 0;
-    int ch;
-    int buf[1];
+    unsigned char buf[1];
 
-    while (read(fd, buf, 1) != 0) {
+    while (read(fd, buf, 1) > 0) {
         if (buf[0] == '\n') {
             newlines++;
         }
