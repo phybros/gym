@@ -13,3 +13,7 @@ endif()
 
 add_executable(${PROJECT_NAME} set.c)
 
+target_compile_options(${PROJECT_NAME} PRIVATE
+  -Wall -Wextra -Wpedantic
+)
+
