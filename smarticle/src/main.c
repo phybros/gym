@@ -13,9 +13,9 @@ const int screenHeight = 800;
 // how many total particles
 #define NUM_PARTICLES 10000
 // how many different species
-#define NUM_SPECIES 8
+#define NUM_SPECIES 7
 
-#define GRID_SIZE 20
+#define GRID_SIZE 15
 
 int DEBUG = 0;
 float max_range = 0.05;
@@ -237,8 +237,9 @@ void update_simulation(float delta) {
 
 void render() {
     for (int i = 0; i < NUM_PARTICLES; i++) {
-       // DrawCircle(p.positions[i].x * screenWidth, p.positions[i].y * screenHeight, 2, species_colors[p.colors[i]]);
-       DrawPixel(p.positions[i].x * screenWidth, p.positions[i].y * screenHeight, species_colors[p.colors[i]]);
+       // DrawCircle(p.positions[i].x * screenWidth, p.positions[i].y * screenHeight, 1, species_colors[p.colors[i]]);
+       // DrawPixel(p.positions[i].x * screenWidth, p.positions[i].y * screenHeight, species_colors[p.colors[i]]);
+       DrawRectangleV(Vector2Scale(p.positions[i], screenHeight), (Vector2){2,2}, species_colors[p.colors[i]]);
     }
 
     draw_grid();
