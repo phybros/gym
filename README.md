@@ -8,16 +8,17 @@ this code is not supposed to be pretty, or super optimized or anything.
 
 ideas:
 
-- playing with command line arguments in C (`strtok` and friends??)
 - [`hexdump` clone](dumphex/)
-- my own shell
-- fun with strings in c
 - [particle life (smarticle)](smarticle/)
 - [`wc` clone](hm/)
+- [playing with command line arguments in C](getopt/)
+- [game of life (and other cellular automata?)](gol/)
+- [hashtables and friends](hashtables/)
+- my own shell
+- fun with strings in c
 - `grep` clone?
 - custom memory allocator (and arenas??)
 - play around with SIMD
-- game of life (and other cellular automata?)
 - something with threads
 - some sort of generative (NOT AI) art thinger
 - miniature terminal text editor
